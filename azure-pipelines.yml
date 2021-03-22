@@ -1,0 +1,59 @@
+# Starter pipeline
+
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+stages:
+- stage: lz_transit_hub  # name of the stage, A-Z, a-z, 0-9, and underscore
+  displayName: Transit Landing Zone Hub # friendly name to display in the UI
+  jobs:
+  - template: pipelines/terraform_template.yaml
+    parameters:
+      jobs:
+      - job: lz_transit_hub_base
+        displayName: 'Transit Hub Base'
+        variables:
+        - group: example-group
+        - name: directory
+          value: '$(System.DefaultWorkingDirectory)/environments/LZ-transit/01_transit_hub/02_transit_hub_base'
+        - name: serviceConnection
+          value: 'LandingZone'
+      - job: lz_transit_hub_network
+        displayName: 'Transit Hub Network'
+        dependsOn: lz_transit_hub_base
+        variables:
+        - group: example-group
+        - name: directory
+          value: '$(System.DefaultWorkingDirectory)/environments/LZ-transit/01_transit_hub/03_transit_hub_network'
+        - name: serviceConnection
+          value: 'LandingZone'
+- stage: lz_transit_prod  # name of the stage, A-Z, a-z, 0-9, and underscore
+  displayName: Transit Landing Zone Prod # friendly name to display in the UI
+  dependsOn:
+  - lz_transit_hub
+  condition: succeeded('lz_transit_hub')
+  jobs:
+  - template: pipelines/terraform_template.yaml
+    parameters:
+      jobs:
+      - job: lz_transit_prod_base
+        displayName: 'Transit Prod Base'
+        variables:
+        - group: example-group
+        - name: directory
+          value: '$(System.DefaultWorkingDirectory)/environments/LZ-transit/02_transit_prod/01_transit_prod_base'
+        - name: serviceConnection
+          value: 'LandingZone'
+      - job: lz_transit_prod_network
+        displayName: 'Transit Prod Network'
+        dependsOn: lz_transit_prod_base
+        variables:
+        - group: example-group
+        - name: directory
+          value: '$(System.DefaultWorkingDirectory)/environments/LZ-transit/02_transit_prod/02_transit_prod_network'
+        - name: serviceConnection
+          value: 'LandingZone'
